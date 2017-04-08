@@ -10,6 +10,10 @@ class AProtoGameGameMode : public AGameModeBase
 
 public:
 	AProtoGameGameMode();
+
+private:
+	UPROPERTY()
+	UObject *m_pObject;
 };
 
 
