@@ -36,7 +36,7 @@ void UAriesDialogManager::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 	}
 
 	//对话Array为空，但是当前Request已经播放完毕，执行finish并广播通知
-	if (CurrentDialogRequest && IsRequestPlaying())
+	if (CurrentDialogRequest && !IsRequestPlaying())
 	{
 		FinishRequest(CurrentDialogRequest);
 		CurrentDialogRequest = nullptr;
