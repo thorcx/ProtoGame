@@ -2,12 +2,17 @@
 #include "GameDefination/AriesGameModeBase.h"
 #include "AriesDialogComponent.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogDialogComponent, Warning, All);
 
 UDialogEvent::~UDialogEvent()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Dialog End"));
+	
 }
 
+UDialogEvent::UDialogEvent()
+{
+	
+}
 
 UAriesDialogComponent::UAriesDialogComponent(FObjectInitializer const& objInit)
 	:Super(objInit)
@@ -28,7 +33,7 @@ void UAriesDialogComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	if (IsItemInPlay && !IsPlaying())
 	{
 		IsItemInPlay = false;
-		if(CurrentPlayItem.IsValid())
+		if(CurrentPlayItem)
 			CurrentPlayItem->OnDialogItemEnd.Broadcast();
 	}
 }
@@ -45,6 +50,20 @@ void UAriesDialogComponent::BeginPlay()
 	}
 }
 
+void UAriesDialogComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (CurrentPlayItem)
+		CurrentPlayItem = nullptr;
+	Super::EndPlay(EndPlayReason);
+}
+
+void UAriesDialogComponent::BeginDestroy()
+{
+	if (CurrentPlayItem)
+		CurrentPlayItem = nullptr;
+	Super::BeginDestroy();
+}
+
 void UAriesDialogComponent::Speak(USoundBase* soundAsset, EAriesDialogPriority dialogPriority)
 {
 //如果声音正在播，判断新资源优先级如果高于现在的，抢占
@@ -57,24 +76,35 @@ void UAriesDialogComponent::Speak(USoundBase* soundAsset, EAriesDialogPriority d
 	}
 	else
 	{
-		InitSound(soundAsset, dialogPriority);
+		InitSound(soundAsset, dialogPriority); 
 	}
-
+	
 	Play();
 }
 
 UDialogEvent* UAriesDialogComponent::PlayDialogItem(FName DialogItemName)
 {
-	UDialogEvent* event = NewObject<UDialogEvent>(this);
+	
 	if (bIsEnabled && DialogEvents)
 	{
 		static const FString contextStr(TEXT("GetDialogRow"));
 		FDialogEventData* dialogRow = DialogEvents->FindRow<FDialogEventData>(DialogItemName, contextStr);
-		Speak(dialogRow->Sound, dialogRow->Priority);
+		if (dialogRow)
+		{
+			Speak(dialogRow->Sound, dialogRow->Priority);
+			UDialogEvent* event = NewObject<UDialogEvent>(this);
+			CurrentPlayItem = event;
+			IsItemInPlay = true;
+			return CurrentPlayItem;
+		}
+		else
+		{
+			IsItemInPlay = false;
+			UE_LOG(LogDialogComponent, Error, TEXT("Invaild Row Name:[%s]"), *DialogItemName.ToString());
+		}
 	}
-	CurrentPlayItem = event;
-	IsItemInPlay = true;
-	return event;
+
+	return nullptr;
 }
 
 UDialogRequest* UAriesDialogComponent::TriggerDialogEvent(FName EventName)

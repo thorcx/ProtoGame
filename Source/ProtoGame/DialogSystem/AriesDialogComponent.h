@@ -6,6 +6,9 @@
 /**用来给各种Actor挂载实现对话的组件，由AriesDialogManager统一调度
 
 */
+
+
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDialogItemBegin);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDialogItemEnd);
 //USTRUCT(BlueprintType)
@@ -16,6 +19,7 @@ class UDialogEvent : public UObject
 
 public:
 	
+	UDialogEvent();
 	~UDialogEvent();
 	
 	UPROPERTY(BlueprintAssignable, Category = "Dialog Request")
@@ -24,7 +28,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Dialog Request")
 	FOnDialogItemEnd   OnDialogItemEnd;
 
-
+	char *m_block;
 };
 
 
@@ -40,9 +44,14 @@ public:
 
 	//Begin ActorComponent interface
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	//End ActorComponent interface
 
-	virtual void BeginPlay() override;
+	//~ Begin UObject Interface.
+	virtual void BeginDestroy() override;
+	//~ End UObject Interface.
+
 
 	//播放对话声音资源，如果当前正在播放且传入的对话优先级大于当前正播放的则立即切换，否则播当前正在播放的
 	//如果没在播，立即播放新对话,并设置优先级.
@@ -96,10 +105,16 @@ private:
 
 	//在蓝图掉PlayDialogItem内会NewObject一个UDialogEvent，这里用WeakPtr引用，在TickComponent内，如果这个New的对象没被GC则调用
 	//如果在蓝图内没拿引用接住PlayDialogItem返回的值，这个值是个临时值，在任意时刻都可能被GC回收掉
-	TWeakObjectPtr<UDialogEvent> CurrentPlayItem;
-	/*UPROPERTY()
-	UDialogEvent *CurrentPlayItem;*/
+	//这里用意是Component不控制生成出来的对话条目的生命周期，但是这里有一个潜在问题，因为New出来的DialogEvent没有引用，有可能随时被GC，
+	//这里没有任何约定保证生成后不立刻被回收，然后在TickComponent的轮询(poll)内会访问到空对象，造成播放失败
+	//TWeakObjectPtr<UDialogEvent> CurrentPlayItem;
 	
+
+	//持有一个当前播放条目的强引用，防止被垃圾回收
+	UPROPERTY()
+	UDialogEvent *CurrentPlayItem;
+	
+	//组件是否处于播放DialogItem状态
 	bool IsItemInPlay;
 	
 
