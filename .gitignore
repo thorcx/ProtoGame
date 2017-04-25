@@ -381,3 +381,5 @@ Content/StarterContent/Textures/T_Wood_Pine_N.uasset
 Content/StarterContent/Textures/T_Wood_Walnut_D.uasset
 Content/StarterContent/Textures/T_Wood_Walnut_N.uasset
 Content/StarterContent/Textures/T_ground_Moss_D.uasset
+
+*.db

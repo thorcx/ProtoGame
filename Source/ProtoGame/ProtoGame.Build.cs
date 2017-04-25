@@ -6,11 +6,15 @@ public class ProtoGame : ModuleRules
 {
 	public ProtoGame(TargetInfo Target)
 	{
-		PublicDependencyModuleNames.AddRange(new string[] {
+
+     
+
+        PublicDependencyModuleNames.AddRange(new string[] {
             "Core",
             "CoreUObject",
             "Engine",
             "InputCore",
-            "HeadMountedDisplay" });
+            "HeadMountedDisplay",
+            "SteamVR"});
 	}
 }
